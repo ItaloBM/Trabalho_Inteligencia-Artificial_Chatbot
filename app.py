@@ -8,15 +8,15 @@ app = Flask(__name__)
 # Carrega a base de dados
 df_copa = pd.read_csv('copa.csv')
 
-# Configura o NLTK para conversas rápidas
+# Configura o NLTK para conversas e mantém o ciclo ativo
 pares = [
     [r"oi|ola|olá|opa", ["Olá, craque! Sou o CopaBot. Quer saber quem levantou a taça em qual ano?"]],
-    [r"qual( é| e)? o seu nome?", ["Sou o CopaBot, o camisa 10 dos dados da Copa do Mundo!"]],
-    [r"obrigado|vlw|valeu", ["Tamo junto! Se precisar de mais estatísticas, é só chamar."]]
+    [r"qual( é| e)? o seu nome?", ["Sou o CopaBot, o camisa 10 dos dados da Copa do Mundo! Qual ano você quer consultar agora?"]],
+    [r"obrigado|vlw|valeu", ["Tamo junto! Tem mais algum ano da Copa que você queira descobrir?"]]
 ]
 chatbot_basico = Chat(pares, reflections)
 
-# Função de busca no Pandas
+# Função de busca no Pandas com perguntas de engajamento
 def buscar_dados_copa(ano):
     try:
         ano = int(ano)
@@ -26,11 +26,13 @@ def buscar_dados_copa(ano):
             campeao = resultado.iloc[0]['Campeao']
             sede = resultado.iloc[0]['Sede']
             vice = resultado.iloc[0]['Vice']
-            return f"🏆 Na Copa de {ano} ({sede}), a seleção campeã foi: {campeao}! A {vice} ficou com o vice-campeonato."
+            # Adicionamos uma pergunta no final da resposta de sucesso!
+            return f"🏆 Na Copa de {ano} ({sede}), a seleção campeã foi: {campeao}! A {vice} ficou com o vice-campeonato. Sobre qual outro ano você quer saber?"
         else:
-            return f"Putz, o VAR me avisou aqui que não temos dados sobre a Copa de {ano} ou ela não existiu. Tente anos entre 1994 e 2022."
+            # Mantém o usuário no jogo mesmo se a Copa não for encontrada
+            return f"Putz, o VAR me avisou aqui que não temos dados sobre a Copa de {ano} ou ela não existiu. Tente anos entre 1994 e 2022. Qual ano vamos buscar agora?"
     except ValueError:
-        return "Formato de ano inválido. Digite algo como 2002."
+        return "Formato de ano inválido. Digite algo como 2002. Qual ano você quer tentar?"
 
 # Rotas Web
 @app.route("/")
@@ -47,7 +49,8 @@ def get_response():
     else:
         resposta = chatbot_basico.respond(user_input)
         if not resposta:
-            resposta = "Desculpe, não captei a jogada. Tente perguntar sobre o campeão de um ano específico, tipo: 'Quem ganhou em 2014?'"
+            # Devolve a bola para o usuário
+            resposta = "Desculpe, não captei a jogada. Me pergunte sobre o campeão de um ano específico, tipo: 'Quem ganhou em 2014?'"
             
     return jsonify({"response": resposta})
 
