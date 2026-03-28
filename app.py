@@ -8,6 +8,12 @@ app = Flask(__name__)
 # Carrega a base de dados
 df_copa = pd.read_csv('copa.csv')
 
+#Contagem de Títulos
+def contar_titulos():
+    """Contagem de Títulos por seleção"""
+    titulos = Counter(df_copa['Campeao'])
+    return titulos
+
 # Configura o NLTK para conversas e mantém o ciclo ativo
 pares = [
     [r"oi|ola|olá|opa", ["Olá, craque! Sou o CopaBot. Quer saber quem levantou a taça em qual ano?"]],
@@ -27,8 +33,9 @@ def buscar_dados_copa(ano):
             campeao = resultado.iloc[0]['Campeao']
             sede = resultado.iloc[0]['Sede']
             vice = resultado.iloc[0]['Vice']
+            terceiro = resultado.iloc[0]['Terceiro']
             # Adicionamos uma pergunta no final da resposta de sucesso!
-            return f"🏆 Na Copa de {ano} ({sede}), a seleção campeã foi: {campeao}! A {vice} ficou com o vice-campeonato. Sobre qual outro ano você quer saber?"
+            return f"🏆 Na Copa de {ano} ({sede}), a seleção campeã foi: {campeao}! A {vice} ficou com o vice-campeonato e  {terceiro} em terceiro. Sobre qual outro ano você quer saber?"
         else:
             # Mantém o usuário no jogo mesmo se a Copa não for encontrada
             return f"Putz, o VAR me avisou aqui que não temos dados sobre a Copa de {ano} ou ela não existiu. Tente anos entre 1994 e 2022. Qual ano vamos buscar agora?"
