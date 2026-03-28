@@ -13,6 +13,7 @@ pares = [
     [r"oi|ola|olá|opa", ["Olá, craque! Sou o CopaBot. Quer saber quem levantou a taça em qual ano?"]],
     [r"qual( é| e)? o seu nome?", ["Sou o CopaBot, o camisa 10 dos dados da Copa do Mundo! Qual ano você quer consultar agora?"]],
     [r"obrigado|vlw|valeu", ["Tamo junto! Tem mais algum ano da Copa que você queira descobrir?"]]
+    [r"qual foi a (última|ultima) copa?|última copa do mundo", [" A última Copa de que temos dados foi em {2022}! Vamos descobrir quem foi campeão?"]],
 ]
 chatbot_basico = Chat(pares, reflections)
 
