@@ -1,9 +1,9 @@
-Ano,Sede,Campeao,Vice
-1994,Estados Unidos,Brasil,Italia
-1998,Franca,Franca,Brasil
-2002,Coreia do Sul e Japao,Brasil,Alemanha
-2006,Alemanha,Italia,Franca
-2010,Africa do Sul,Espanha,Holanda
-2014,Brasil,Alemanha,Argentina
-2018,Russia,Franca,Croacia
-2022,Catar,Argentina,Franca
+Ano,Sede,Campeao,Vice,Terceiro,Selecoes_Participantes
+1994,Estados Unidos,Brasil,Italia,Suecia,24
+1998,Franca,Franca,Brasil,Croacia,32
+2002,Coreia do Sul e Japao,Brasil,Alemanha,Turquia,32
+2006,Alemanha,Italia,Franca,Alemanha,32
+2010,Africa do Sul,Espanha,Holanda,Alemanha,32
+2014,Brasil,Alemanha,Argentina,Holanda,32
+2018,Russia,Franca,Croacia,Belgica,32
+2022,Catar,Argentina,Franca,Marrocos,32
