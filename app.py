@@ -2,24 +2,26 @@ from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import re
 from nltk.chat.util import Chat, reflections
+from collections import Counter
 
 app = Flask(__name__)
 
 # Carrega a base de dados
 df_copa = pd.read_csv('copa.csv')
 
-#Contagem de Títulos
 def contar_titulos():
-    """Contagem de Títulos por seleção"""
+    """Retorna um dicionário com a contagem de títulos por seleção"""
     titulos = Counter(df_copa['Campeao'])
     return titulos
-
+ 
+titulos_por_selecao = contar_titulos()
 # Configura o NLTK para conversas e mantém o ciclo ativo
 pares = [
     [r"oi|ola|olá|opa", ["Olá, craque! Sou o CopaBot. Quer saber quem levantou a taça em qual ano?"]],
     [r"qual( é| e)? o seu nome?", ["Sou o CopaBot, o camisa 10 dos dados da Copa do Mundo! Qual ano você quer consultar agora?"]],
-    [r"obrigado|vlw|valeu", ["Tamo junto! Tem mais algum ano da Copa que você queira descobrir?"]]
-    [r"qual foi a (última|ultima) copa?|última copa do mundo", [" A última Copa de que temos dados foi em {2022}! Vamos descobrir quem foi campeão?"]],
+    [r"obrigado|vlw|valeu", ["Tamo junto! Tem mais algum ano da Copa que você queira descobrir?"]],
+    [r"qual foi a (última|ultima) copa?|última copa do mundo", [f" A última Copa de que temos dados foi em ! Vamos descobrir quem foi campeão?"]],
+    [r"franca|quantos títulos a franca tem?|quantas copas a franca ganhou?",[f" França tem {titulos_por_selecao.get('Franca', 0)} títulos! Muito forte! Quer saber em quais anos venceu?"]],
 ]
 chatbot_basico = Chat(pares, reflections)
 
