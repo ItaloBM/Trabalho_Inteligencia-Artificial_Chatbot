@@ -3,10 +3,30 @@ function addMessage(text, className) {
     const chatBox = document.getElementById("chat-box");
     const messageDiv = document.createElement("div");
     messageDiv.className = "message " + className;
-    messageDiv.innerText = text;
+    
+    const messageContent = document.createElement("div");
+    messageContent.className = "message-content";
+    
+    if (className === "bot-message") {
+        const avatar = document.createElement("span");
+        avatar.className = "bot-avatar";
+        avatar.innerText = "⚽";
+        messageContent.appendChild(avatar);
+    }
+    
+    const textContent = document.createElement("div");
+    textContent.className = "text-content";
+    textContent.innerText = text;
+    messageContent.appendChild(textContent);
+    
+    messageDiv.appendChild(messageContent);
     chatBox.appendChild(messageDiv);
-    // Faz o scroll automático para o fundo
-    chatBox.scrollTop = chatBox.scrollHeight;
+    
+    // Faz o scroll automático para o fundo com animação suave
+    chatBox.scrollTo({
+        top: chatBox.scrollHeight,
+        behavior: 'smooth'
+    });
 }
 
 // Deteta se o utilizador pressionou a tecla "Enter"

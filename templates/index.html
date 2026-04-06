@@ -3,23 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CopaBot - O Camisa 10 da IA</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=1) }}">
+    <title>CopaBot - World Cup AI Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
-<div class="chat-container">
-    <div class="chat-header">⚽ CopaBot 🏆</div>
-    <div class="chat-box" id="chat-box">
-        <div class="message bot-message">Apito inicial! ⏱️ Sou o CopaBot. Pergunte-me sobre os campeões das Copas do Mundo! (Ex: "Quem ganhou em 2002?")</div>
+    <div class="stadium-background"></div>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="trophy-icon">🏆</div>
+            <div class="header-content">
+                <h1>CopaBot</h1>
+                <p class="subtitle">World Cup Intelligence</p>
+            </div>
+            <div class="status-indicator"></div>
+        </div>
+        
+        <div class="chat-box" id="chat-box">
+            <div class="message bot-message">
+                <div class="message-content">
+                    <span class="bot-avatar">⚽</span>
+                    <div class="text-content">
+                        Apito inicial! Sou o CopaBot, seu assistente especializado em Copas do Mundo. Pergunte-me sobre campeões, anos, seleções e muito mais!
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input type="text" id="user-input" placeholder="Digite sua pergunta sobre a Copa..." onkeypress="handleKeyPress(event)" autocomplete="off">
+                <button onclick="sendMessage()" class="send-button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
     </div>
-    <div class="input-area">
-        <input type="text" id="user-input" placeholder="Faça a sua jogada..." onkeypress="handleKeyPress(event)" autocomplete="off">
-        <button onclick="sendMessage()">Enviar</button>
-    </div>
-</div>
 
-<script src="{{ url_for('static', filename='script.js') }}"></script>
-
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
