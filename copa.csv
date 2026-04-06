@@ -1,9 +1,23 @@
-Ano,Sede,Campeao,Vice,Terceiro,Selecoes_Participantes
-1994,Estados Unidos,Brasil,Italia,Suecia,24
-1998,Franca,Franca,Brasil,Croacia,32
-2002,Coreia do Sul e Japao,Brasil,Alemanha,Turquia,32
-2006,Alemanha,Italia,Franca,Alemanha,32
-2010,Africa do Sul,Espanha,Holanda,Alemanha,32
-2014,Brasil,Alemanha,Argentina,Holanda,32
-2018,Russia,Franca,Croacia,Belgica,32
-2022,Catar,Argentina,Franca,Marrocos,32
+Ano,Sede,Campeao,Vice,Terceiro,Selecoes_Participantes,Artilheiro,Gols_Artilheiro
+1930,Uruguai,Uruguai,Argentina,Estados Unidos,13,Guillermo Stabile,8
+1934,Italia,Italia,Tchecoslovaquia,Alemanha,16,Oldrich Nejedly,5
+1938,Franca,Italia,Hungria,Brasil,15,Leonidas,7
+1950,Brasil,Uruguai,Brasil,Suecia,13,Ademir,9
+1954,Suica,Alemanha,Hungria,Austria,16,Sandor Kocsis,11
+1958,Suecia,Brasil,Suecia,Franca,16,Just Fontaine,13
+1962,Chile,Brasil,Tchecoslovaquia,Chile,16,Garrincha e Vava e Leonel Sanchez,4
+1966,Inglaterra,Inglaterra,Alemanha,Portugal,16,Eusebio,9
+1970,Mexico,Brasil,Italia,Alemanha,16,Gerd Muller,10
+1974,Alemanha,Alemanha,Holanda,Polonia,16,Grzegorz Lato,7
+1978,Argentina,Argentina,Holanda,Brasil,16,Mario Kempes,6
+1982,Espanha,Italia,Alemanha,Polonia,24,Paolo Rossi,6
+1986,Mexico,Argentina,Alemanha,Franca,24,Gary Lineker,6
+1990,Italia,Alemanha,Argentina,Italia,24,Salvatore Schillaci,6
+1994,Estados Unidos,Brasil,Italia,Suecia,24,Oleg Salenko e Hristo Stoichkov,6
+1998,Franca,Franca,Brasil,Croacia,32,Davor Suker,6
+2002,Coreia do Sul e Japao,Brasil,Alemanha,Turquia,32,Ronaldo,8
+2006,Alemanha,Italia,Franca,Alemanha,32,Miroslav Klose,5
+2010,Africa do Sul,Espanha,Holanda,Alemanha,32,Thomas Muller,5
+2014,Brasil,Alemanha,Argentina,Holanda,32,James Rodriguez,6
+2018,Russia,Franca,Croacia,Belgica,32,Harry Kane,6
+2022,Catar,Argentina,Franca,Marrocos,32,Kylian Mbappe,8
