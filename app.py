@@ -1,15 +1,35 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
-import re
-from nltk.chat.util import Chat, reflections
 from collections import Counter
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.chat.util import Chat, reflections
+
+# ─── CONFIGURAÇÃO DO NLTK  ──────────────────────────────────────
+try:
+    nltk.data.find('tokenizers/punkt')
+    nltk.data.find('tokenizers/punkt_tab')
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('punkt')
+    nltk.download('punkt_tab')
+    nltk.download('stopwords')
+
+# ─── CONFIGURAÇÃO DO RAG  ─────────────────────────────
+try:
+    from rag_engine import gerar_resposta_rag
+    RAG_DISPONIVEL = True
+except Exception as e:
+    print(f"[AVISO] RAG não disponível: {e}")
+    print("[AVISO] Execute 'python build_vector_db.py' para ativar o modo RAG.")
+    RAG_DISPONIVEL = False
 
 app = Flask(__name__)
 
-# Carrega a base de dados
+# ─── DADOS LOCAIS ────────────────────────────────────────────────────────────
 df_copa = pd.read_csv('copa.csv')
 
-# Dados extras: Artilheiros por Copa
 artilheiros = {
     1994: {"nome": "Oleg Salenko e Hristo Stoichkov", "gols": 6},
     1998: {"nome": "Davor Šuker", "gols": 6},
@@ -22,123 +42,136 @@ artilheiros = {
 }
 
 def contar_titulos():
-    """Retorna um dicionário com a contagem de títulos por seleção"""
-    titulos = Counter(df_copa['Campeao'])
-    return titulos
+    return Counter(df_copa['Campeao'])
 
 def buscar_titulos_selecao(selecao):
-    """Busca quantos títulos uma seleção tem"""
     titulos_por_selecao = contar_titulos()
-    
-    # Normaliza o nome da seleção
     selecao_normalizada = selecao.strip().title()
-    
-    # Busca com variações
     for key in titulos_por_selecao.keys():
         if selecao_normalizada.lower() in key.lower() or key.lower() in selecao_normalizada.lower():
             quantidade = titulos_por_selecao[key]
             anos = df_copa[df_copa['Campeao'] == key]['Ano'].tolist()
             anos_str = ", ".join(map(str, anos))
-            return f"🏆 {key} tem {quantidade} título{'s' if quantidade > 1 else ''} de Copa do Mundo! Campeã em: {anos_str}. Quer saber sobre outra seleção?"
-    
-    return f"Hmm, não encontrei títulos para '{selecao}'. Tente: Brasil, Argentina, Alemanha, França, Itália, Espanha... Qual você quer consultar?"
+            return f"🏆 {key} tem {quantidade} título{'s' if quantidade > 1 else ''} de Copa do Mundo! Campeã em: {anos_str}."
+    return None
 
 def buscar_artilheiro(ano):
-    """Busca o artilheiro de uma Copa específica"""
     try:
         ano = int(ano)
         if ano in artilheiros:
             art = artilheiros[ano]
-            return f"⚽ O artilheiro da Copa de {ano} foi {art['nome']} com {art['gols']} gols! Quer saber de outro ano?"
-        else:
-            return f"Não tenho dados do artilheiro da Copa de {ano}. Tenho informações de 1994 a 2022. Qual ano você quer?"
+            return f"⚽ O artilheiro da Copa de {ano} foi {art['nome']} com {art['gols']} gols!"
+        return None
     except ValueError:
-        return "Formato inválido. Digite algo como 'artilheiro 2014'."
+        return None
 
 def listar_todos_campeoes():
-    """Lista todos os campeões e seus títulos"""
     titulos_por_selecao = contar_titulos()
     resultado = "🏆 RANKING DE CAMPEÕES MUNDIAIS:\n\n"
-    
-    # Ordena por quantidade de títulos
     ranking = sorted(titulos_por_selecao.items(), key=lambda x: x[1], reverse=True)
-    
     for selecao, titulos in ranking:
         anos = df_copa[df_copa['Campeao'] == selecao]['Ano'].tolist()
         anos_str = ", ".join(map(str, anos))
         resultado += f"⭐ {selecao}: {titulos} título{'s' if titulos > 1 else ''} ({anos_str})\n"
-    
-    resultado += "\nQuer detalhes de alguma seleção específica?"
     return resultado
- 
-titulos_por_selecao = contar_titulos()
 
-# Configura o NLTK para conversas e mantém o ciclo ativo
-pares = [
-    [r"oi|ola|olá|opa|eae|e ai", ["Olá, craque! Sou o CopaBot. Quer saber sobre campeões, artilheiros ou títulos?"]],
-    [r"qual( é| e)? o seu nome?", ["Sou o CopaBot, especialista em Copas do Mundo! O que você quer descobrir?"]],
-    [r"obrigado|vlw|valeu|thanks", ["Tamo junto! Tem mais alguma pergunta sobre a Copa?"]],
-    [r"tchau|ate|até|bye", ["Até a próxima Copa! ⚽🏆"]],
-]
-chatbot_basico = Chat(pares, reflections)
-
-# Função de busca no Pandas com perguntas de engajamento
 def buscar_dados_copa(ano):
     try:
         ano = int(ano)
         resultado = df_copa[df_copa['Ano'] == ano]
-        
         if not resultado.empty:
             campeao = resultado.iloc[0]['Campeao']
             sede = resultado.iloc[0]['Sede']
             vice = resultado.iloc[0]['Vice']
             terceiro = resultado.iloc[0]['Terceiro']
-            return f"🏆 Na Copa de {ano} ({sede}), a seleção campeã foi: {campeao}! A {vice} ficou com o vice-campeonato e {terceiro} em terceiro. Sobre qual outro ano você quer saber?"
-        else:
-            return f"Putz, o VAR me avisou aqui que não temos dados sobre a Copa de {ano}. Tente anos entre 1994 e 2022. Qual ano vamos buscar agora?"
+            return f"🏆 Na Copa de {ano} ({sede}), a seleção campeã foi: {campeao}! A {vice} ficou com o vice-campeonato e {terceiro} em terceiro."
+        return None
     except ValueError:
-        return "Formato de ano inválido. Digite algo como 2002. Qual ano você quer tentar?"
+        return None
 
-# Rotas Web
+# ─── FUNÇÃO INTELIGENTE DE PLN  ─────────────────────────────────
+def processar_pergunta_nltk(pergunta):
+    tokens = word_tokenize(pergunta.lower(), language='portuguese')
+    stop_words = set(stopwords.words('portuguese'))
+    tokens_uteis = [word for word in tokens if word not in stop_words and word.isalnum()]
+    
+    analise = {'intencao': 'indefinida', 'pais': None, 'ano': None}
+    
+    for token in tokens_uteis:
+        if token.isdigit() and len(token) == 4 and (token.startswith('19') or token.startswith('20')):
+            analise['ano'] = token
+            break
+
+    paises_conhecidos = ['brasil', 'argentina', 'alemanha', 'frança', 'franca', 'itália', 'italia', 'espanha', 'uruguai', 'inglaterra']
+    for pais in paises_conhecidos:
+        if pais in tokens_uteis:
+            analise['pais'] = pais
+            break 
+            
+    if any(palavra in tokens_uteis for palavra in ['todos', 'ranking', 'lista', 'total']) and any(palavra in tokens_uteis for palavra in ['campeões', 'campeoes', 'títulos', 'titulos']):
+        analise['intencao'] = 'listar_todos'
+    elif any(palavra in tokens_uteis for palavra in ['artilheiro', 'goleador', 'artilharia', 'gols']):
+        analise['intencao'] = 'buscar_artilheiro'
+    elif any(palavra in tokens_uteis for palavra in ['campeão', 'campeao', 'vencedor', 'ganhou', 'título', 'títulos', 'titulos', 'copa']):
+        if analise['pais']:
+            analise['intencao'] = 'buscar_titulos_selecao'
+        elif analise['ano']:
+            analise['intencao'] = 'buscar_ano'
+
+    if analise['ano'] and analise['intencao'] == 'indefinida':
+         analise['intencao'] = 'buscar_ano'
+            
+    return analise
+
+# Chatbot Básico para saudações
+pares = [
+    [r"oi|ola|olá|opa|eae|e ai", ["Olá, craque! Sou o CopaBot. Quer saber sobre campeões, artilheiros ou títulos?"]],
+    [r"qual( é| e)? o seu nome?", ["Sou o CopaBot, especialista em Copas do Mundo!"]],
+    [r"obrigado|vlw|valeu|thanks", ["Tamo junto! Tem mais alguma pergunta sobre a Copa?"]],
+]
+chatbot_basico = Chat(pares, reflections)
+
+# ─── ROTAS WEB ───────────────────────────────────────────────────────────────
 @app.route("/")
 def home():
     return render_template("index.html")
 
 @app.route("/get_response", methods=["POST"])
 def get_response():
-    user_input = request.json.get("message").lower()
+    user_input = request.json.get("message")
     
-    # Verifica se é pergunta sobre títulos de uma seleção
-    if re.search(r'(titulo|titulos|quantos|quantas|copa).*?(brasil|argentina|alemanha|franca|italia|espanha|uruguai|inglaterra)', user_input):
-        match = re.search(r'(brasil|argentina|alemanha|franca|italia|espanha|uruguai|inglaterra)', user_input)
-        if match:
-            resposta = buscar_titulos_selecao(match.group(1))
-            return jsonify({"response": resposta})
+    # 1. TENTA PRIMEIRO A SUA INTELIGÊNCIA NLTK (Busca Exata e Rápida)
+    entendimento = processar_pergunta_nltk(user_input)
     
-    # Verifica se quer listar todos os campeões
-    if re.search(r'(todos|ranking|lista|campeoes|campeões|total)', user_input) and re.search(r'(titulo|titulos|campe)', user_input):
-        resposta = listar_todos_campeoes()
-        return jsonify({"response": resposta})
-    
-    # Verifica se é pergunta sobre artilheiro
-    if re.search(r'artilheiro|goleador|artilharia', user_input):
-        ano_encontrado = re.search(r'\b(19|20)\d{2}\b', user_input)
-        if ano_encontrado:
-            resposta = buscar_artilheiro(ano_encontrado.group())
-        else:
-            resposta = "De qual ano você quer saber o artilheiro? Digite algo como 'artilheiro 2014'."
-        return jsonify({"response": resposta})
-    
-    # Busca por ano específico
-    ano_encontrado = re.search(r'\b(19|20)\d{2}\b', user_input)
-    if ano_encontrado:
-        resposta = buscar_dados_copa(ano_encontrado.group())
-    else:
-        resposta = chatbot_basico.respond(user_input)
-        if not resposta:
-            resposta = "Desculpe, não captei a jogada. Pergunte sobre:\n• Campeão de um ano (ex: '2014')\n• Títulos de uma seleção (ex: 'títulos Brasil')\n• Artilheiro (ex: 'artilheiro 2018')\n• Ranking completo (ex: 'todos os campeões')"
+    if entendimento['intencao'] == 'buscar_titulos_selecao' and entendimento['pais']:
+        resp = buscar_titulos_selecao(entendimento['pais'])
+        if resp: return jsonify({"response": resp, "modo": "nltk_local"})
+        
+    if entendimento['intencao'] == 'listar_todos':
+        return jsonify({"response": listar_todos_campeoes(), "modo": "nltk_local"})
+        
+    if entendimento['intencao'] == 'buscar_artilheiro' and entendimento['ano']:
+        resp = buscar_artilheiro(entendimento['ano'])
+        if resp: return jsonify({"response": resp, "modo": "nltk_local"})
             
-    return jsonify({"response": resposta})
+    if entendimento['intencao'] == 'buscar_ano' and entendimento['ano']:
+        resp = buscar_dados_copa(entendimento['ano'])
+        if resp: return jsonify({"response": resp, "modo": "nltk_local"})
+    
+    # 2. SE O NLTK NÃO ENCONTRAR, CHAMA O RAG DO SEU COLEGA (Busca Semântica Avançada)
+    if RAG_DISPONIVEL:
+        resultado_rag = gerar_resposta_rag(user_input)
+        if resultado_rag["modo"] == "rag":
+            return jsonify({"response": resultado_rag["resposta"], "modo": "rag"})
+
+    # 3. SE NENHUM DOS DOIS FUNCIONAR, TENTA SAUDAÇÃO BÁSICA
+    resposta_nltk = chatbot_basico.respond(user_input.lower())
+    if resposta_nltk:
+        return jsonify({"response": resposta_nltk, "modo": "nltk_basico"})
+
+    # 4. FALLBACK FINAL
+    resposta_padrao = "Desculpe, não captei a jogada. Você pode perguntar sobre o campeão de um ano ou sobre títulos de uma seleção!"
+    return jsonify({"response": resposta_padrao, "modo": "fallback"})
 
 if __name__ == "__main__":
     app.run(debug=True)
