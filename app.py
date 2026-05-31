@@ -1,8 +1,19 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
-import re
 from nltk.chat.util import Chat, reflections
 from collections import Counter
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+
+# --- CONFIGURAÇÃO DO NLTK ---
+# Baixa os pacotes necessários na primeira execução
+try:
+    nltk.data.find('tokenizers/punkt')
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('punkt')
+    nltk.download('stopwords')
 
 app = Flask(__name__)
 
@@ -29,11 +40,8 @@ def contar_titulos():
 def buscar_titulos_selecao(selecao):
     """Busca quantos títulos uma seleção tem"""
     titulos_por_selecao = contar_titulos()
-    
-    # Normaliza o nome da seleção
     selecao_normalizada = selecao.strip().title()
     
-    # Busca com variações
     for key in titulos_por_selecao.keys():
         if selecao_normalizada.lower() in key.lower() or key.lower() in selecao_normalizada.lower():
             quantidade = titulos_por_selecao[key]
@@ -59,8 +67,6 @@ def listar_todos_campeoes():
     """Lista todos os campeões e seus títulos"""
     titulos_por_selecao = contar_titulos()
     resultado = "🏆 RANKING DE CAMPEÕES MUNDIAIS:\n\n"
-    
-    # Ordena por quantidade de títulos
     ranking = sorted(titulos_por_selecao.items(), key=lambda x: x[1], reverse=True)
     
     for selecao, titulos in ranking:
@@ -70,20 +76,9 @@ def listar_todos_campeoes():
     
     resultado += "\nQuer detalhes de alguma seleção específica?"
     return resultado
- 
-titulos_por_selecao = contar_titulos()
 
-# Configura o NLTK para conversas e mantém o ciclo ativo
-pares = [
-    [r"oi|ola|olá|opa|eae|e ai", ["Olá, craque! Sou o CopaBot. Quer saber sobre campeões, artilheiros ou títulos?"]],
-    [r"qual( é| e)? o seu nome?", ["Sou o CopaBot, especialista em Copas do Mundo! O que você quer descobrir?"]],
-    [r"obrigado|vlw|valeu|thanks", ["Tamo junto! Tem mais alguma pergunta sobre a Copa?"]],
-    [r"tchau|ate|até|bye", ["Até a próxima Copa! ⚽🏆"]],
-]
-chatbot_basico = Chat(pares, reflections)
-
-# Função de busca no Pandas com perguntas de engajamento
 def buscar_dados_copa(ano):
+    """Busca dados gerais de uma copa pelo ano"""
     try:
         ano = int(ano)
         resultado = df_copa[df_copa['Ano'] == ano]
@@ -99,6 +94,64 @@ def buscar_dados_copa(ano):
     except ValueError:
         return "Formato de ano inválido. Digite algo como 2002. Qual ano você quer tentar?"
 
+# Configura o NLTK para conversas de saudação (Chatbot Básico)
+pares = [
+    [r"oi|ola|olá|opa|eae|e ai", ["Olá, craque! Sou o CopaBot. Quer saber sobre campeões, artilheiros ou títulos?"]],
+    [r"qual( é| e)? o seu nome?", ["Sou o CopaBot, especialista em Copas do Mundo! O que você quer descobrir?"]],
+    [r"obrigado|vlw|valeu|thanks", ["Tamo junto! Tem mais alguma pergunta sobre a Copa?"]],
+    [r"tchau|ate|até|bye", ["Até a próxima Copa! ⚽🏆"]],
+]
+chatbot_basico = Chat(pares, reflections)
+
+# --- IMPLEMENTAÇÃO DE PLN  ---
+def processar_pergunta_nltk(pergunta):
+    """
+    Realiza Tokenização e Análise Semântica (remoção de stopwords) 
+    para extrair a intenção e entidades (país, ano).
+    """
+    # 1. Tokenização
+    tokens = word_tokenize(pergunta.lower(), language='portuguese')
+    
+    # 2. Remoção de Stopwords (Análise Semântica)
+    stop_words = set(stopwords.words('portuguese'))
+    tokens_uteis = [word for word in tokens if word not in stop_words and word.isalnum()]
+    
+    analise = {
+        'intencao': 'indefinida',
+        'pais': None,
+        'ano': None
+    }
+    
+    # Identificar Entidade Numérica (Ano)
+    for token in tokens_uteis:
+        if token.isdigit() and len(token) == 4 and (token.startswith('19') or token.startswith('20')):
+            analise['ano'] = token
+            break
+
+    # Identificar Entidade (País)
+    paises_conhecidos = ['brasil', 'argentina', 'alemanha', 'frança', 'franca', 'itália', 'italia', 'espanha', 'uruguai', 'inglaterra']
+    for pais in paises_conhecidos:
+        if pais in tokens_uteis:
+            analise['pais'] = pais
+            break 
+            
+    # Identificar Intenção
+    if any(palavra in tokens_uteis for palavra in ['todos', 'ranking', 'lista', 'total']) and any(palavra in tokens_uteis for palavra in ['campeões', 'campeoes', 'títulos', 'titulos']):
+        analise['intencao'] = 'listar_todos'
+    elif any(palavra in tokens_uteis for palavra in ['artilheiro', 'goleador', 'artilharia', 'gols']):
+        analise['intencao'] = 'buscar_artilheiro'
+    elif any(palavra in tokens_uteis for palavra in ['campeão', 'campeao', 'vencedor', 'ganhou', 'título', 'títulos', 'titulos', 'copa']):
+        if analise['pais']:
+            analise['intencao'] = 'buscar_titulos_selecao'
+        elif analise['ano']:
+            analise['intencao'] = 'buscar_ano'
+
+    # Se só mencionou um ano sem intenção clara, assume que quer os dados daquele ano
+    if analise['ano'] and analise['intencao'] == 'indefinida':
+         analise['intencao'] = 'buscar_ano'
+            
+    return analise
+
 # Rotas Web
 @app.route("/")
 def home():
@@ -106,39 +159,35 @@ def home():
 
 @app.route("/get_response", methods=["POST"])
 def get_response():
-    user_input = request.json.get("message").lower()
+    user_input = request.json.get("message")
     
-    # Verifica se é pergunta sobre títulos de uma seleção
-    if re.search(r'(titulo|titulos|quantos|quantas|copa).*?(brasil|argentina|alemanha|franca|italia|espanha|uruguai|inglaterra)', user_input):
-        match = re.search(r'(brasil|argentina|alemanha|franca|italia|espanha|uruguai|inglaterra)', user_input)
-        if match:
-            resposta = buscar_titulos_selecao(match.group(1))
-            return jsonify({"response": resposta})
+    # 1. Pipeline de Linguagem Natural (PLN)
+    entendimento = processar_pergunta_nltk(user_input)
     
-    # Verifica se quer listar todos os campeões
-    if re.search(r'(todos|ranking|lista|campeoes|campeões|total)', user_input) and re.search(r'(titulo|titulos|campe)', user_input):
-        resposta = listar_todos_campeoes()
-        return jsonify({"response": resposta})
-    
-    # Verifica se é pergunta sobre artilheiro
-    if re.search(r'artilheiro|goleador|artilharia', user_input):
-        ano_encontrado = re.search(r'\b(19|20)\d{2}\b', user_input)
-        if ano_encontrado:
-            resposta = buscar_artilheiro(ano_encontrado.group())
+    # 2. Responde baseado na extração semântica
+    if entendimento['intencao'] == 'buscar_titulos_selecao' and entendimento['pais']:
+        return jsonify({"response": buscar_titulos_selecao(entendimento['pais'])})
+        
+    if entendimento['intencao'] == 'listar_todos':
+        return jsonify({"response": listar_todos_campeoes()})
+        
+    if entendimento['intencao'] == 'buscar_artilheiro':
+        if entendimento['ano']:
+            return jsonify({"response": buscar_artilheiro(entendimento['ano'])})
         else:
-            resposta = "De qual ano você quer saber o artilheiro? Digite algo como 'artilheiro 2014'."
-        return jsonify({"response": resposta})
-    
-    # Busca por ano específico
-    ano_encontrado = re.search(r'\b(19|20)\d{2}\b', user_input)
-    if ano_encontrado:
-        resposta = buscar_dados_copa(ano_encontrado.group())
-    else:
-        resposta = chatbot_basico.respond(user_input)
-        if not resposta:
-            resposta = "Desculpe, não captei a jogada. Pergunte sobre:\n• Campeão de um ano (ex: '2014')\n• Títulos de uma seleção (ex: 'títulos Brasil')\n• Artilheiro (ex: 'artilheiro 2018')\n• Ranking completo (ex: 'todos os campeões')"
+            return jsonify({"response": "De qual ano você quer saber o artilheiro? Digite algo como 'artilheiro 2014'."})
             
-    return jsonify({"response": resposta})
+    if entendimento['intencao'] == 'buscar_ano' and entendimento['ano']:
+        return jsonify({"response": buscar_dados_copa(entendimento['ano'])})
+    
+    # 3. Tenta o Chatbot Básico NLTK (Saudações)
+    resposta_nltk = chatbot_basico.respond(user_input)
+    if resposta_nltk:
+        return jsonify({"response": resposta_nltk})
+
+    # 4. Fallback Temporário (Até a Pessoa 1 implementar o Hugging Face)
+    resposta_padrao = "Desculpe, não captei a jogada. Pergunte sobre:\n• Campeão de um ano (ex: '2014')\n• Títulos de uma seleção (ex: 'títulos Brasil')\n• Artilheiro (ex: 'artilheiro 2018')\n• Ranking completo (ex: 'todos os campeões')"
+    return jsonify({"response": resposta_padrao})
 
 if __name__ == "__main__":
     app.run(debug=True)
