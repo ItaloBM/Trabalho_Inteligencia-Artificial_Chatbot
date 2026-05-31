@@ -1,8 +1,21 @@
+# pyrefly: ignore [missing-import]
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import re
+# pyrefly: ignore [missing-import]
 from nltk.chat.util import Chat, reflections
 from collections import Counter
+
+# ─── RAG Engine ───────────────────────────────────────────────────────────────
+# Importa o motor RAG. Se o banco vetorial ainda não foi criado, o sistema
+# funciona normalmente apenas com regex (degradação graciosa).
+try:
+    from rag_engine import gerar_resposta_rag
+    RAG_DISPONIVEL = True
+except Exception as e:
+    print(f"[AVISO] RAG não disponível: {e}")
+    print("[AVISO] Execute 'python build_vector_db.py' para ativar o modo RAG.")
+    RAG_DISPONIVEL = False
 
 app = Flask(__name__)
 
@@ -95,7 +108,19 @@ def buscar_dados_copa(ano):
             terceiro = resultado.iloc[0]['Terceiro']
             return f"🏆 Na Copa de {ano} ({sede}), a seleção campeã foi: {campeao}! A {vice} ficou com o vice-campeonato e {terceiro} em terceiro. Sobre qual outro ano você quer saber?"
         else:
-            return f"Putz, o VAR me avisou aqui que não temos dados sobre a Copa de {ano}. Tente anos entre 1994 e 2022. Qual ano vamos buscar agora?"
+            # Lógica inteligente para anos sem Copa
+            if ano < 1930:
+                return f"Putz, em {ano} ainda não existia Copa do Mundo! A primeira foi só em 1930. Qual outro ano quer saber?"
+            elif ano > 2022 and ano <= 2026:
+                return f"A Copa de {ano} ainda vai acontecer! Mas tenho dados até 2022. Qual Copa passada você quer consultar?"
+            elif ano > 2026:
+                return f"Calma lá, viajante do tempo! Ainda não chegamos em {ano}. Minha base vai até 2022."
+            elif ano == 1942 or ano == 1946:
+                return f"Triste lembrança... Não teve Copa do Mundo em {ano} por causa da Segunda Guerra Mundial. Tente outro ano!"
+            elif ano % 4 != 2: # As Copas acontecem em anos que deixam resto 2 quando divididos por 4 (ex: 2014, 2018, 2022)
+                return f"VAR em ação: Não teve Copa do Mundo no ano de {ano}! As Copas acontecem de 4 em 4 anos. Tente um ano válido como 2018 ou 2022."
+            else:
+                return f"O VAR me avisou aqui que não tenho os dados sobre a Copa de {ano} no meu banco. Tente anos entre 1930 e 2022!"
     except ValueError:
         return "Formato de ano inválido. Digite algo como 2002. Qual ano você quer tentar?"
 
@@ -113,12 +138,12 @@ def get_response():
         match = re.search(r'(brasil|argentina|alemanha|franca|italia|espanha|uruguai|inglaterra)', user_input)
         if match:
             resposta = buscar_titulos_selecao(match.group(1))
-            return jsonify({"response": resposta})
+            return jsonify({"response": resposta, "modo": "regex"})
     
     # Verifica se quer listar todos os campeões
     if re.search(r'(todos|ranking|lista|campeoes|campeões|total)', user_input) and re.search(r'(titulo|titulos|campe)', user_input):
         resposta = listar_todos_campeoes()
-        return jsonify({"response": resposta})
+        return jsonify({"response": resposta, "modo": "regex"})
     
     # Verifica se é pergunta sobre artilheiro
     if re.search(r'artilheiro|goleador|artilharia', user_input):
@@ -127,18 +152,45 @@ def get_response():
             resposta = buscar_artilheiro(ano_encontrado.group())
         else:
             resposta = "De qual ano você quer saber o artilheiro? Digite algo como 'artilheiro 2014'."
-        return jsonify({"response": resposta})
+        return jsonify({"response": resposta, "modo": "regex"})
     
     # Busca por ano específico
     ano_encontrado = re.search(r'\b(19|20)\d{2}\b', user_input)
     if ano_encontrado:
         resposta = buscar_dados_copa(ano_encontrado.group())
-    else:
-        resposta = chatbot_basico.respond(user_input)
-        if not resposta:
-            resposta = "Desculpe, não captei a jogada. Pergunte sobre:\n• Campeão de um ano (ex: '2014')\n• Títulos de uma seleção (ex: 'títulos Brasil')\n• Artilheiro (ex: 'artilheiro 2018')\n• Ranking completo (ex: 'todos os campeões')"
-            
-    return jsonify({"response": resposta})
+        return jsonify({"response": resposta, "modo": "regex"})
+
+    # ─── Fallback RAG ────────────────────────────────────────────────────────
+    # Se nenhuma regex bateu, tenta a busca vetorial semântica
+    if RAG_DISPONIVEL:
+        resultado_rag = gerar_resposta_rag(request.json.get("message"))
+        if resultado_rag["modo"] == "rag":
+            return jsonify({"response": resultado_rag["resposta"], "modo": "rag"})
+
+    # ─── Fallback NLTK ───────────────────────────────────────────────────────
+    resposta = chatbot_basico.respond(user_input)
+    if not resposta:
+        resposta = (
+            "Desculpe, não captei a jogada. Pergunte sobre:\n"
+            "• Campeão de um ano (ex: '2014')\n"
+            "• Títulos de uma seleção (ex: 'títulos Brasil')\n"
+            "• Artilheiro (ex: 'artilheiro 2018')\n"
+            "• Ranking completo (ex: 'todos os campeões')\n"
+            "• Perguntas livres (ex: 'quem ganhou a copa de 1970?')"
+        )
+    return jsonify({"response": resposta, "modo": "nltk"})
+
+
+# ─── Rota de status do RAG (útil para debug) ─────────────────────────────────
+@app.route("/rag_status")
+def rag_status():
+    return jsonify({
+        "rag_disponivel": RAG_DISPONIVEL,
+        "mensagem": (
+            "RAG ativo e funcionando!" if RAG_DISPONIVEL
+            else "Execute 'python build_vector_db.py' para ativar o RAG."
+        )
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,5 +1,28 @@
-// Função para adicionar a mensagem no ecrã de chat
-function addMessage(text, className) {
+// ─── Utilitário: converte markdown simples em HTML ────────────────────────────
+function markdownParaHtml(texto) {
+    return texto
+        // **negrito**
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // *itálico*
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // `código`
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        // Quebra de linha simples
+        .replace(/\n/g, '<br>');
+}
+
+// ─── Badge de modo ────────────────────────────────────────────────────────────
+function criarBadgeModo(modo) {
+    if (!modo || modo === 'nltk' || modo === 'regex') return '';
+    const badge = document.createElement('span');
+    badge.className = 'rag-badge';
+    badge.innerHTML = '🔍 RAG';
+    badge.title = 'Resposta gerada por busca vetorial semântica (RAG)';
+    return badge;
+}
+
+// ─── Adiciona mensagem no chat ─────────────────────────────────────────────────
+function addMessage(text, className, modo = null) {
     const chatBox = document.getElementById("chat-box");
     const messageDiv = document.createElement("div");
     messageDiv.className = "message " + className;
@@ -16,41 +39,78 @@ function addMessage(text, className) {
     
     const textContent = document.createElement("div");
     textContent.className = "text-content";
-    textContent.innerText = text;
+
+    // Renderiza markdown simples se for mensagem do bot
+    if (className === "bot-message") {
+        textContent.innerHTML = markdownParaHtml(text);
+    } else {
+        textContent.innerText = text;
+    }
+
+    // Adiciona badge RAG se aplicável
+    const badge = criarBadgeModo(modo);
+    if (badge) {
+        const badgeWrapper = document.createElement('div');
+        badgeWrapper.className = 'badge-wrapper';
+        badgeWrapper.appendChild(badge);
+        textContent.prepend(badgeWrapper);
+    }
+
     messageContent.appendChild(textContent);
-    
     messageDiv.appendChild(messageContent);
     chatBox.appendChild(messageDiv);
     
-    // Faz o scroll automático para o fundo com animação suave
+    // Scroll automático suave
     chatBox.scrollTo({
         top: chatBox.scrollHeight,
         behavior: 'smooth'
     });
 }
 
-// Deteta se o utilizador pressionou a tecla "Enter"
+// ─── Indicador de digitação ───────────────────────────────────────────────────
+function mostrarDigitando() {
+    const chatBox = document.getElementById("chat-box");
+    const typingDiv = document.createElement("div");
+    typingDiv.className = "message bot-message typing-indicator-wrapper";
+    typingDiv.id = "typing-indicator";
+    typingDiv.innerHTML = `
+        <div class="message-content">
+            <span class="bot-avatar">⚽</span>
+            <div class="text-content">
+                <div class="typing-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        </div>`;
+    chatBox.appendChild(typingDiv);
+    chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+}
+
+function removerDigitando() {
+    const el = document.getElementById("typing-indicator");
+    if (el) el.remove();
+}
+
+// ─── Tecla Enter ──────────────────────────────────────────────────────────────
 function handleKeyPress(event) {
     if (event.key === "Enter") { 
         sendMessage(); 
     }
 }
 
-// Envia a mensagem para o servidor Flask
+// ─── Envia mensagem ao Flask ──────────────────────────────────────────────────
 function sendMessage() {
     const inputField = document.getElementById("user-input");
     const message = inputField.value.trim();
     
-    // Se estiver vazio, não faz nada
     if (message === "") return;
 
-    // Adiciona a mensagem do utilizador no ecrã
     addMessage(message, "user-message");
-    
-    // Limpa a caixa de texto
     inputField.value = "";
+    inputField.disabled = true;
 
-    // Faz o pedido ao Backend (app.py) via POST
+    mostrarDigitando();
+
     fetch("/get_response", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -58,11 +118,15 @@ function sendMessage() {
     })
     .then(response => response.json())
     .then(data => {
-        // Adiciona a resposta do Bot (CopaBot) no ecrã
-        addMessage(data.response, "bot-message");
+        removerDigitando();
+        addMessage(data.response, "bot-message", data.modo);
+        inputField.disabled = false;
+        inputField.focus();
     })
     .catch(error => {
+        removerDigitando();
         console.error("Erro:", error);
         addMessage("O árbitro interrompeu o jogo. Erro de ligação com o servidor.", "bot-message");
+        inputField.disabled = false;
     });
 }
