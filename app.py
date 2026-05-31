@@ -10,9 +10,11 @@ from nltk.corpus import stopwords
 # Baixa os pacotes necessários na primeira execução
 try:
     nltk.data.find('tokenizers/punkt')
+    nltk.data.find('tokenizers/punkt_tab')
     nltk.data.find('corpora/stopwords')
 except LookupError:
     nltk.download('punkt')
+    nltk.download('punkt_tab')             
     nltk.download('stopwords')
 
 app = Flask(__name__)
