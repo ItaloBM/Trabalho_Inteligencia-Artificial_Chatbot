@@ -1,10 +1,14 @@
-# pyrefly: ignore [missing-import]
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import re
 # pyrefly: ignore [missing-import]
 from nltk.chat.util import Chat, reflections
 from collections import Counter
+import os
+from dotenv import load_dotenv
+
+# Carrega variáveis de ambiente do arquivo .env
+load_dotenv()
 
 # ─── RAG Engine ───────────────────────────────────────────────────────────────
 # Importa o motor RAG. Se o banco vetorial ainda não foi criado, o sistema
@@ -133,6 +137,16 @@ def home():
 def get_response():
     user_input = request.json.get("message").lower()
     
+    # ─── Tenta usar a IA Generativa (Gemini) PRIMEIRO ────────────────────────
+    if RAG_DISPONIVEL:
+        resultado_rag = gerar_resposta_rag(user_input)
+        # Se não deu erro de API (ou seja, a chave do Gemini foi configurada)
+        if resultado_rag["modo"] != "erro_api":
+            return jsonify({"response": resultado_rag["resposta"], "modo": resultado_rag["modo"]})
+        # Se deu erro_api, o código continua e cai no Fallback antigo (Regex + NLTK)
+
+    # ─── Fallback: Regex e NLTK (Usado apenas se não tiver API Key configurada) ───
+    
     # Verifica se é pergunta sobre títulos de uma seleção
     if re.search(r'(titulo|titulos|quantos|quantas|copa).*?(brasil|argentina|alemanha|franca|italia|espanha|uruguai|inglaterra)', user_input):
         match = re.search(r'(brasil|argentina|alemanha|franca|italia|espanha|uruguai|inglaterra)', user_input)
@@ -159,13 +173,6 @@ def get_response():
     if ano_encontrado:
         resposta = buscar_dados_copa(ano_encontrado.group())
         return jsonify({"response": resposta, "modo": "regex"})
-
-    # ─── Fallback RAG ────────────────────────────────────────────────────────
-    # Se nenhuma regex bateu, tenta a busca vetorial semântica
-    if RAG_DISPONIVEL:
-        resultado_rag = gerar_resposta_rag(request.json.get("message"))
-        if resultado_rag["modo"] == "rag":
-            return jsonify({"response": resultado_rag["resposta"], "modo": "rag"})
 
     # ─── Fallback NLTK ───────────────────────────────────────────────────────
     resposta = chatbot_basico.respond(user_input)
