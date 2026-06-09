@@ -5,6 +5,7 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.chat.util import Chat, reflections
+import os
 
 # ─── CONFIGURAÇÃO DO NLTK  ──────────────────────────────────────
 try:
@@ -169,9 +170,12 @@ def get_response():
     if resposta_nltk:
         return jsonify({"response": resposta_nltk, "modo": "nltk_basico"})
 
-    # 4. FALLBACK FINAL
-    resposta_padrao = "Desculpe, não captei a jogada. Você pode perguntar sobre o campeão de um ano ou sobre títulos de uma seleção!"
-    return jsonify({"response": resposta_padrao, "modo": "fallback"})
+    # 4. FALLBACK GROQ
+    from hf_engine import gerar_resposta_hf
+    print("CHEGOU NO GROQ")
+    print(f"CHAVE: {os.getenv('GROQ_API_KEY')}")
+    resposta_hf = gerar_resposta_hf(user_input)
+    return jsonify({"response": resposta_hf, "modo": "groq"})
 
 if __name__ == "__main__":
     app.run(debug=True)
