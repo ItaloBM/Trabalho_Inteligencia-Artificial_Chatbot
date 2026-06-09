@@ -3,3 +3,5 @@ pandas
 nltk
 chromadb
 sentence-transformers
+groq
+python-dotenv
