@@ -5,24 +5,24 @@
 
 /* ─── Design Tokens ──────────────────────────────────────────────── */
 :root {
-    --bg-deep:          #070B18;
-    --bg-primary:       #0B1026;
-    --bg-secondary:     #111832;
-    --bg-card:          rgba(255, 255, 255, 0.05);
+    --bg-deep:          #000000;
+    --bg-primary:       #0A0A0A;
+    --bg-secondary:     #141414;
+    --bg-card:          rgba(0, 0, 0, 0.6);
 
-    --gold:             #C9A84C;
-    --gold-light:       #E2C675;
-    --gold-dark:        #8B6914;
-    --gold-muted:       rgba(201, 168, 76, 0.25);
+    --gold:             #FFFFFF;
+    --gold-light:       #F0F0F0;
+    --gold-dark:        #E0E0E0;
+    --gold-muted:       rgba(255, 255, 255, 0.25);
 
-    --text-primary:     #F0F0F5;
-    --text-secondary:   #8890A4;
-    --text-on-gold:     #1A1408;
+    --text-primary:     #FFFFFF;
+    --text-secondary:   #A0A0A0;
+    --text-on-gold:     #000000;
 
-    --border-subtle:    rgba(255, 255, 255, 0.08);
-    --border-gold:      rgba(201, 168, 76, 0.30);
-    --shadow-gold:      rgba(201, 168, 76, 0.15);
-    --shadow-dark:      rgba(0, 0, 0, 0.50);
+    --border-subtle:    rgba(255, 255, 255, 0.15);
+    --border-gold:      rgba(255, 255, 255, 0.40);
+    --shadow-gold:      rgba(255, 255, 255, 0.15);
+    --shadow-dark:      rgba(0, 0, 0, 0.80);
 }
 
 /* ─── Reset ──────────────────────────────────────────────────────── */
@@ -51,11 +51,10 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background:
-        radial-gradient(ellipse 60% 50% at 20% 20%, rgba(201, 168, 76, 0.06) 0%, transparent 70%),
-        radial-gradient(ellipse 50% 40% at 80% 80%, rgba(201, 168, 76, 0.04) 0%, transparent 70%),
-        radial-gradient(ellipse 80% 60% at 50% 50%, rgba(17, 24, 50, 0.8) 0%, transparent 100%),
-        linear-gradient(160deg, var(--bg-deep) 0%, var(--bg-primary) 40%, var(--bg-secondary) 100%);
+    background: 
+        linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)),
+        url('img/fundo.webp') no-repeat center center;
+    background-size: cover;
     z-index: -1;
 }
 
@@ -76,7 +75,7 @@ body {
     max-width: 480px;
     height: 90vh;
     max-height: 800px;
-    background: rgba(11, 16, 38, 0.65);
+    background: rgba(10, 10, 10, 0.65);
     backdrop-filter: blur(24px) saturate(150%);
     -webkit-backdrop-filter: blur(24px) saturate(150%);
     border-radius: 30px;
@@ -84,7 +83,7 @@ body {
     box-shadow:
         0 25px 60px var(--shadow-dark),
         0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-        0 0 80px rgba(201, 168, 76, 0.06);
+        0 0 80px rgba(255, 255, 255, 0.06);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -105,7 +104,7 @@ body {
 
 /* ─── Header — dark with gold accent line ────────────────────────── */
 .chat-header {
-    background: linear-gradient(135deg, rgba(17, 24, 50, 0.95) 0%, rgba(11, 16, 38, 0.98) 100%);
+    background: linear-gradient(135deg, rgba(20, 20, 20, 0.95) 0%, rgba(10, 10, 10, 0.98) 100%);
     padding: 24px 20px;
     display: flex;
     align-items: center;
@@ -127,7 +126,7 @@ body {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(201, 168, 76, 0.04), transparent);
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.04), transparent);
     animation: shine 4s infinite;
 }
 
@@ -150,7 +149,7 @@ body {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 4px 12px rgba(201, 168, 76, 0.35));
+    filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.35));
 }
 
 @keyframes float {
@@ -166,7 +165,7 @@ body {
     font-size: 28px;
     font-weight: 800;
     color: var(--text-primary);
-    text-shadow: 0 0 20px rgba(201, 168, 76, 0.2);
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
     letter-spacing: 0.5px;
     margin-bottom: 2px;
 }
@@ -219,7 +218,7 @@ body {
 }
 
 .chat-box::-webkit-scrollbar-thumb:hover {
-    background: rgba(201, 168, 76, 0.45);
+    background: rgba(255, 255, 255, 0.45);
 }
 
 /* ─── Message Bubbles ────────────────────────────────────────────── */
@@ -247,7 +246,7 @@ body {
 
 .bot-avatar {
     font-size: 24px;
-    filter: drop-shadow(0 2px 6px rgba(201, 168, 76, 0.3));
+    filter: drop-shadow(0 2px 6px rgba(255, 255, 255, 0.3));
     flex-shrink: 0;
 }
 
@@ -283,7 +282,7 @@ body {
     background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
     color: var(--text-on-gold);
     border-radius: 18px 18px 4px 18px;
-    box-shadow: 0 4px 16px rgba(201, 168, 76, 0.25);
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.25);
     font-weight: 500;
     border: none;
 }
@@ -295,7 +294,7 @@ body {
 /* ─── Input Area ─────────────────────────────────────────────────── */
 .input-area {
     padding: 20px;
-    background: rgba(11, 16, 38, 0.6);
+    background: rgba(10, 10, 10, 0.6);
     backdrop-filter: blur(10px);
     border-top: 1px solid var(--border-subtle);
 }
@@ -351,7 +350,7 @@ body {
 
 .send-button:hover {
     transform: scale(1.1) rotate(15deg);
-    box-shadow: 0 6px 24px rgba(201, 168, 76, 0.45);
+    box-shadow: 0 6px 24px rgba(255, 255, 255, 0.45);
 }
 
 .send-button:active {
@@ -383,13 +382,13 @@ body {
     border-radius: 20px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    box-shadow: 0 2px 8px rgba(108, 99, 255, 0.4);
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.4);
     cursor: default;
 }
 
 /* ─── Código inline ───────────────────────────────────────────────── */
 .text-content code {
-    background: rgba(108, 99, 255, 0.1);
+    background: rgba(255, 255, 255, 0.1);
     color: #4c3bc4;
     padding: 1px 6px;
     border-radius: 4px;
@@ -441,7 +440,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: linear-gradient(135deg, rgba(201, 168, 76, 0.25) 0%, rgba(139, 105, 20, 0.30) 100%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(200, 200, 200, 0.30) 100%);
     color: var(--gold-light);
     font-size: 10px;
     font-weight: 700;
@@ -449,14 +448,14 @@ body {
     border-radius: 20px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    box-shadow: 0 2px 8px rgba(201, 168, 76, 0.15);
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.15);
     border: 1px solid var(--border-gold);
     cursor: default;
 }
 
 /* ─── Código inline ──────────────────────────────────────────────── */
 .text-content code {
-    background: rgba(201, 168, 76, 0.12);
+    background: rgba(255, 255, 255, 0.12);
     color: var(--gold-light);
     padding: 1px 6px;
     border-radius: 4px;
