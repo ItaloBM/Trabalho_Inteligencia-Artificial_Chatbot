@@ -12,6 +12,7 @@ import os
 import re
 import chromadb
 from sentence_transformers import SentenceTransformer
+from groq import Groq
 
 # Diretório base: sempre a pasta onde este módulo está
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -25,6 +26,7 @@ SIMILARITY_THRESHOLD = 0.35  # Distância mínima de coseno (abaixo = não relev
 # ─── Singleton: carrega modelo e banco apenas uma vez ────────────────────────
 _model = None
 _collection = None
+_groq_client = None
 
 
 def _get_model() -> SentenceTransformer:
@@ -41,8 +43,18 @@ def _get_collection():
         _collection = client.get_collection(COLLECTION_NAME)
     return _collection
 
+def _get_groq_client():
+    """Configura e retorna o cliente da Groq, se a chave estiver disponível."""
+    global _groq_client
+    if _groq_client is None:
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key or api_key == "sua_chave_aqui":
+            return None
+        _groq_client = Groq(api_key=api_key)
+    return _groq_client
 
-# ─── Busca vetorial ───────────────────────────────────────────────────────────
+
+# busca vetorial
 def buscar_contexto(query: str, n_results: int = 3) -> list[dict]:
     """
     Busca os documentos mais similares à query no ChromaDB.
@@ -73,10 +85,8 @@ def buscar_contexto(query: str, n_results: int = 3) -> list[dict]:
 
     return contexto
 
-
-# ─── Geração de resposta por template ─────────────────────────────────────────
 def _formatar_copa(meta: dict) -> str:
-    """Formata os metadados de uma Copa em resposta amigável."""
+    """Formata os metadados de uma Copa para servir de contexto para o LLM."""
     ano = meta["ano"]
     sede = meta["sede"]
     campeao = meta["campeao"]
@@ -86,95 +96,92 @@ def _formatar_copa(meta: dict) -> str:
     gols = meta["gols_artilheiro"]
 
     return (
-        f"🏆 **Copa de {ano}** — Sede: {sede}\n"
-        f"   🥇 Campeão: **{campeao}**\n"
-        f"   🥈 Vice: {vice}\n"
-        f"   🥉 Terceiro: {terceiro}\n"
-        f"   ⚽ Artilheiro: {artilheiro} ({gols} gols)"
+        f"Ano da Copa: {ano} | Sede: {sede} | Campeão: {campeao} | "
+        f"Vice: {vice} | Terceiro: {terceiro} | "
+        f"Artilheiro: {artilheiro} ({gols} gols)"
     )
-
-
-def _detectar_intencao(query: str) -> str:
-    """Detecta o tipo de pergunta para personalizar a resposta."""
-    q = query.lower()
-    if re.search(r"campe[ãa]o|venceu|ganhou|quem ganhou|titulo|título", q):
-        return "campeao"
-    if re.search(r"sede|sediad|pa[íi]s|cidade|onde foi|onde aconteceu", q):
-        return "sede"
-    if re.search(r"artilheiro|goleador|mais gols|quem fez mais", q):
-        return "artilheiro"
-    if re.search(r"vice|segundo lugar|perdeu a final|finalista", q):
-        return "vice"
-    if re.search(r"terceiro|3[oº°]|bronze", q):
-        return "terceiro"
-    return "geral"
 
 
 def gerar_resposta_rag(query: str, n_results: int = 3) -> dict:
     """
-    Executa o pipeline RAG completo:
-        1. Embedding da query
-        2. Busca vetorial no ChromaDB
-        3. Filtragem por limiar de relevância
-        4. Geração de resposta por template
-
-    Retorna um dict com:
-        - "resposta": str — texto da resposta ao usuário
-        - "fontes": list[dict] — documentos recuperados
-        - "modo": "rag" | "sem_resultado"
+    Executa o pipeline RAG completo usando IA Generativa (Groq):
+        1. Busca vetorial no ChromaDB
+        2. Envia contexto + pergunta para a Groq
     """
-    contexto = buscar_contexto(query, n_results)
+    contexto_bruto = buscar_contexto(query, n_results)
 
     # Filtra apenas resultados relevantes
-    relevantes = [c for c in contexto if c["distancia"] <= SIMILARITY_THRESHOLD]
+    relevantes = [c for c in contexto_bruto if c["distancia"] <= SIMILARITY_THRESHOLD]
 
-    if not relevantes:
+    client = _get_groq_client()
+
+    if not client:
+        # Fallback de segurança caso o usuário não tenha configurado o .env ainda
         return {
-            "resposta": (
-                "🤔 Não encontrei informações suficientes sobre isso na minha base "
-                "de dados de Copas do Mundo. Tente perguntar sobre:\n"
-                "• Um ano específico (ex: *'O que aconteceu na Copa de 1970?'*)\n"
-                "• O campeão, vice ou artilheiro de uma Copa\n"
-                "• A sede de uma Copa"
-            ),
+            "resposta": "⚠️ O modelo de IA Generativa (Groq) não está configurado. Crie o arquivo `.env` com sua `GROQ_API_KEY` para que eu consiga gerar respostas completas!",
             "fontes": [],
-            "modo": "sem_resultado",
+            "modo": "erro_api"
         }
 
-    intencao = _detectar_intencao(query)
-    melhor = relevantes[0]["metadados"]
-    ano = melhor["ano"]
-
-    # Personaliza a resposta conforme intenção detectada
-    if intencao == "campeao":
-        intro = f"🏆 Na Copa de {ano}, o campeão foi **{melhor['campeao']}**!"
-    elif intencao == "sede":
-        intro = f"📍 A Copa de {ano} foi sediada em **{melhor['sede']}**!"
-    elif intencao == "artilheiro":
-        intro = (
-            f"⚽ O artilheiro da Copa de {ano} foi **{melhor['artilheiro']}** "
-            f"com **{melhor['gols_artilheiro']} gols**!"
+    # Se não encontrou dados no banco (pergunta fora do escopo do CSV)
+    if not relevantes:
+        sistema_prompt = (
+            "Você é o CopaBot, um assistente especializado em Copas do Mundo de Futebol. "
+            "Você pode responder sobre dois temas: "
+            "(1) Copas do Mundo — campeões, artilheiros, sedes, resultados, seleções, curiosidades e histórias; "
+            "(2) Regras básicas do futebol — como funcionam cartões, impedimento, pênalti, tempo de jogo, VAR, etc. "
+            "NÃO responda sobre outras competições (ligas nacionais, Champions League, clubes, etc.) "
+            "nem sobre assuntos que não tenham relação com futebol ou Copas do Mundo. "
+            "Se a pergunta estiver fora desses temas, recuse educadamente e sugira que o usuário pergunte "
+            "sobre Copas do Mundo ou regras do futebol."
         )
-    elif intencao == "vice":
-        intro = f"🥈 O vice-campeão da Copa de {ano} foi **{melhor['vice']}**!"
-    elif intencao == "terceiro":
-        intro = f"🥉 O terceiro lugar da Copa de {ano} foi **{melhor['terceiro']}**!"
-    else:
-        intro = f"📊 Encontrei informações sobre a Copa de {ano}:"
+        
+        try:
+            resposta_llm = client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": sistema_prompt},
+                    {"role": "user", "content": query}
+                ],
+                model="llama-3.3-70b-versatile",
+            )
+            texto_final = resposta_llm.choices[0].message.content
+        except Exception as e:
+            texto_final = f"Ops! Tive um problema ao conectar com o cérebro da IA (Groq): {str(e)}"
+            
+        return {
+            "resposta": texto_final,
+            "fontes": [],
+            "modo": "llm_fallback",
+        }
 
-    # Monta detalhes completos da Copa principal encontrada
-    detalhes = _formatar_copa(melhor)
-
-    # Adiciona outras Copas relevantes (se houver mais de 1 resultado)
-    extras = ""
-    if len(relevantes) > 1:
-        extras_list = [_formatar_copa(r["metadados"]) for r in relevantes[1:]]
-        extras = "\n\n📌 **Outras Copas relacionadas:**\n" + "\n\n".join(extras_list)
-
-    resposta = f"{intro}\n\n{detalhes}{extras}"
+    # Se encontrou dados (RAG Verdadeiro)
+    contexto_texto = "\n".join([_formatar_copa(r["metadados"]) for r in relevantes])
+    
+    sistema_rag = (
+        "Você é o CopaBot, um assistente especializado em Copas do Mundo de Futebol. "
+        "Use APENAS os dados fornecidos no CONTEXTO abaixo para responder à pergunta do usuário sobre Copas do Mundo. "
+        "Você também pode responder perguntas sobre regras básicas do futebol (cartões, impedimento, pênalti, VAR, etc.) "
+        "usando seu próprio conhecimento, mesmo que não estejam no contexto. "
+        "NÃO responda sobre outras competições (ligas, clubes, etc.) nem sobre assuntos sem relação com futebol. "
+        "Se a resposta de Copa não estiver no contexto, diga que não tem essa informação.\n\n"
+        "CONTEXTO OBTIDO DO BANCO DE DADOS:\n"
+        f"{contexto_texto}"
+    )
+    
+    try:
+        resposta_llm = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": sistema_rag},
+                {"role": "user", "content": query}
+            ],
+            model="llama-3.3-70b-versatile",
+        )
+        texto_final = resposta_llm.choices[0].message.content
+    except Exception as e:
+        texto_final = f"Ops! Tive um problema ao conectar com o cérebro da IA (Groq): {str(e)}"
 
     return {
-        "resposta": resposta,
+        "resposta": texto_final,
         "fontes": [c["texto"] for c in relevantes],
         "modo": "rag",
     }
