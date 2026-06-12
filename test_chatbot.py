@@ -22,7 +22,24 @@ testes = [
         "mensagem": "Quantos títulos o Brasil tem?",
         "palavras_chave": ["título", "titulo"],
     },
-    
+    {
+        "id": 4,
+        "descricao": "Títulos de outra seleção (Argentina)",
+        "mensagem": "títulos argentina",
+        "palavras_chave": ["argentina"],
+    },
+    {
+        "id": 5,
+        "descricao": "Ranking completo de campeões",
+        "mensagem": "Quero ver o ranking de todos os campeões",
+        "palavras_chave": ["ranking", "campe"],
+    },
+    {
+        "id": 6,
+        "descricao": "Artilheiro de um ano específico (2014)",
+        "mensagem": "artilheiro 2014",
+        "palavras_chave": ["james", "rodríguez", "rodriguez"],
+    },
 ]
 
 
