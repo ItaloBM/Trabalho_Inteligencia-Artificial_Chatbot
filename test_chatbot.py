@@ -1,3 +1,6 @@
+#Como rodar testes
+#Abra o terminal e inicie o Chatbot
+#Abra um novo terminal(split terminal) e ative o venv e rode python test_chatbot.pyS
 import requests
 import json
 
