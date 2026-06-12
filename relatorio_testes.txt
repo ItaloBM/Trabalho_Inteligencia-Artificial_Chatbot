@@ -1,0 +1,156 @@
+RELATÓRIO DE TESTES - COPABOT
+==================================================
+
+Teste 1: Saudação
+Mensagem enviada: Oi
+Modo retornado: nltk
+Resposta do bot: Olá, craque! Sou o CopaBot. Quer saber sobre campeões, artilheiros ou títulos?
+Palavras-chave esperadas: copabot, olá, ola
+Resultado: OK
+
+Teste 2: Campeão de um ano específico (2002)
+Mensagem enviada: Quem ganhou a copa de 2002?
+Modo retornado: regex
+Resposta do bot: 🏆 Na Copa de 2002 (Coreia do Sul e Japao), a seleção campeã foi: Brasil! A Alemanha ficou com o vice-campeonato e Turquia em terceiro. Sobre qual outro ano você quer saber?
+Palavras-chave esperadas: brasil
+Resultado: OK
+
+Teste 3: Títulos de uma seleção (Brasil)
+Mensagem enviada: Quantos títulos o Brasil tem?
+Modo retornado: regex
+Resposta do bot: 🏆 Brasil tem 5 títulos de Copa do Mundo! Campeã em: 1958, 1962, 1970, 1994, 2002. Quer saber sobre outra seleção?
+Palavras-chave esperadas: título, titulo
+Resultado: OK
+
+Teste 4: Títulos de outra seleção (Argentina)
+Mensagem enviada: títulos argentina
+Modo retornado: nltk
+Resposta do bot: Desculpe, não captei a jogada. Pergunte sobre:
+• Campeão de um ano (ex: '2014')
+• Títulos de uma seleção (ex: 'títulos Brasil')
+• Artilheiro (ex: 'artilheiro 2018')
+• Ranking completo (ex: 'todos os campeões')
+• Perguntas livres (ex: 'quem ganhou a copa de 1970?')
+Palavras-chave esperadas: argentina
+Resultado: FALHOU
+
+Teste 5: Ranking completo de campeões
+Mensagem enviada: Quero ver o ranking de todos os campeões
+Modo retornado: regex
+Resposta do bot: 🏆 RANKING DE CAMPEÕES MUNDIAIS:
+
+⭐ Brasil: 5 títulos (1958, 1962, 1970, 1994, 2002)
+⭐ Italia: 4 títulos (1934, 1938, 1982, 2006)
+⭐ Alemanha: 4 títulos (1954, 1974, 1990, 2014)
+⭐ Argentina: 3 títulos (1978, 1986, 2022)
+⭐ Uruguai: 2 títulos (1930, 1950)
+⭐ Franca: 2 títulos (1998, 2018)
+⭐ Inglaterra: 1 título (1966)
+⭐ Espanha: 1 título (2010)
+
+Quer detalhes de alguma seleção específica?
+Palavras-chave esperadas: ranking, campe
+Resultado: OK
+
+Teste 6: Artilheiro de um ano específico (2014)
+Mensagem enviada: artilheiro 2014
+Modo retornado: regex
+Resposta do bot: ⚽ O artilheiro da Copa de 2014 foi James Rodríguez com 6 gols! Quer saber de outro ano?
+Palavras-chave esperadas: james, rodríguez, rodriguez
+Resultado: OK
+
+Teste 7: Artilheiro sem informar o ano (lista geral)
+Mensagem enviada: quem foi o artilheiro da copa?
+Modo retornado: regex
+Resposta do bot: ⚽ ARTILHEIROS DE TODAS AS COPAS DO MUNDO:
+
+📅 1930 (Uruguai): Guillermo Stabile — 8 gols
+📅 1934 (Italia): Oldrich Nejedly — 5 gols
+📅 1938 (Franca): Leonidas — 7 gols
+📅 1950 (Brasil): Ademir — 9 gols
+📅 1954 (Suica): Sandor Kocsis — 11 gols
+📅 1958 (Suecia): Just Fontaine — 13 gols
+📅 1962 (Chile): Garrincha e Vava e Leonel Sanchez — 4 gols
+📅 1966 (Inglaterra): Eusebio — 9 gols
+📅 1970 (Mexico): Gerd Muller — 10 gols
+📅 1974 (Alemanha): Grzegorz Lato — 7 gols
+📅 1978 (Argentina): Mario Kempes — 6 gols
+📅 1982 (Espanha): Paolo Rossi — 6 gols
+📅 1986 (Mexico): Gary Lineker — 6 gols
+📅 1990 (Italia): Salvatore Schillaci — 6 gols
+📅 1994 (Estados Unidos): Oleg Salenko e Hristo Stoichkov — 6 gols
+📅 1998 (Franca): Davor Suker — 6 gols
+📅 2002 (Coreia do Sul e Japao): Ronaldo — 8 gols
+📅 2006 (Alemanha): Miroslav Klose — 5 gols
+📅 2010 (Africa do Sul): Thomas Muller — 5 gols
+📅 2014 (Brasil): James Rodriguez — 6 gols
+📅 2018 (Russia): Harry Kane — 6 gols
+📅 2022 (Catar): Kylian Mbappe — 8 gols
+
+Quer saber mais detalhes de alguma Copa específica?
+Palavras-chave esperadas: artilheiro, artilheiros
+Resultado: OK
+
+Teste 8: Ano antes da primeira Copa (1920)
+Mensagem enviada: copa de 1920
+Modo retornado: regex
+Resposta do bot: Putz, em 1920 ainda não existia Copa do Mundo! A primeira foi só em 1930. Qual outro ano quer saber?
+Palavras-chave esperadas: 1930
+Resultado: OK
+
+Teste 9: Ano sem Copa por causa da Guerra (1942)
+Mensagem enviada: o que aconteceu na copa de 1942?
+Modo retornado: regex
+Resposta do bot: Triste lembrança... Não teve Copa do Mundo em 1942 por causa da Segunda Guerra Mundial. Tente outro ano!
+Palavras-chave esperadas: guerra
+Resultado: OK
+
+Teste 10: Ano muito no futuro (2030)
+Mensagem enviada: quem vai ganhar a copa de 2030?
+Modo retornado: regex
+Resposta do bot: Calma lá, viajante do tempo! Ainda não chegamos em 2030. Minha base vai até 2022.
+Palavras-chave esperadas: viajante, 2026
+Resultado: OK
+
+Teste 11: Ano futuro ainda não realizado (2026)
+Mensagem enviada: quem ganhou a copa de 2026?
+Modo retornado: regex
+Resposta do bot: A Copa de 2026 ainda vai acontecer! Mas tenho dados até 2022. Qual Copa passada você quer consultar?
+Palavras-chave esperadas: ainda, vai acontecer
+Resultado: OK
+
+Teste 12: Ano fora do ciclo de 4 em 4 anos (2015)
+Mensagem enviada: copa de 2015
+Modo retornado: regex
+Resposta do bot: VAR em ação: Não teve Copa do Mundo no ano de 2015! As Copas acontecem de 4 em 4 anos. Tente um ano válido como 2018 ou 2022.
+Palavras-chave esperadas: var, 4 em 4, não teve
+Resultado: OK
+
+Teste 13: Agradecimento
+Mensagem enviada: Obrigado!
+Modo retornado: nltk
+Resposta do bot: Tamo junto! Tem mais alguma pergunta sobre a Copa?
+Palavras-chave esperadas: junto, pergunta
+Resultado: OK
+
+Teste 14: Despedida
+Mensagem enviada: Tchau
+Modo retornado: nltk
+Resposta do bot: Até a próxima Copa! ⚽🏆
+Palavras-chave esperadas: copa, até
+Resultado: OK
+
+Teste 15: Pergunta fora do escopo
+Mensagem enviada: Qual a capital da França?
+Modo retornado: nltk
+Resposta do bot: Desculpe, não captei a jogada. Pergunte sobre:
+• Campeão de um ano (ex: '2014')
+• Títulos de uma seleção (ex: 'títulos Brasil')
+• Artilheiro (ex: 'artilheiro 2018')
+• Ranking completo (ex: 'todos os campeões')
+• Perguntas livres (ex: 'quem ganhou a copa de 1970?')
+Palavras-chave esperadas: paris, não captei, campeão, artilheiro
+Resultado: OK
+
+==================================================
+RESUMO: 14/15 testes passaram
