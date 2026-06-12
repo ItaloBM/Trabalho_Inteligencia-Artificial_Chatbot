@@ -40,6 +40,60 @@ testes = [
         "mensagem": "artilheiro 2014",
         "palavras_chave": ["james", "rodríguez", "rodriguez"],
     },
+    {
+        "id": 7,
+        "descricao": "Artilheiro sem informar o ano (lista geral)",
+        "mensagem": "quem foi o artilheiro da copa?",
+        "palavras_chave": ["artilheiro", "artilheiros"],
+    },
+    {
+        "id": 8,
+        "descricao": "Ano antes da primeira Copa (1920)",
+        "mensagem": "copa de 1920",
+        "palavras_chave": ["1930"],
+    },
+    {
+        "id": 9,
+        "descricao": "Ano sem Copa por causa da Guerra (1942)",
+        "mensagem": "o que aconteceu na copa de 1942?",
+        "palavras_chave": ["guerra"],
+    },
+    {
+        "id": 10,
+        "descricao": "Ano muito no futuro (2030)",
+        "mensagem": "quem vai ganhar a copa de 2030?",
+        "palavras_chave": ["viajante", "2026"],
+    },
+    {
+        "id": 11,
+        "descricao": "Ano futuro ainda não realizado (2026)",
+        "mensagem": "quem ganhou a copa de 2026?",
+        "palavras_chave": ["ainda", "vai acontecer"],
+    },
+    {
+        "id": 12,
+        "descricao": "Ano fora do ciclo de 4 em 4 anos (2015)",
+        "mensagem": "copa de 2015",
+        "palavras_chave": ["var", "4 em 4", "não teve"],
+    },
+    {
+        "id": 13,
+        "descricao": "Agradecimento",
+        "mensagem": "Obrigado!",
+        "palavras_chave": ["junto", "pergunta"],
+    },
+    {
+        "id": 14,
+        "descricao": "Despedida",
+        "mensagem": "Tchau",
+        "palavras_chave": ["copa", "até"],
+    },
+    {
+        "id": 15,
+        "descricao": "Pergunta fora do escopo",
+        "mensagem": "Qual a capital da França?",
+        "palavras_chave": ["paris", "não captei", "campeão", "artilheiro"],
+    },
 ]
 
 
